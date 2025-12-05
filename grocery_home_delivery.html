@@ -1,0 +1,238 @@
+<!doctype html>
+<html lang="bn">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Home Delivery Grocery — Demo</title>
+  <style>
+    :root{--bg:#f6f7fb;--card:#ffffff;--accent:#0f62fe;--muted:#6b7280}
+    *{box-sizing:border-box}
+    body{font-family:Inter, system-ui, -apple-system, 'Segoe UI', Roboto, 'Noto Sans Bengali', 'Noto Sans', sans-serif;margin:0;background:var(--bg);color:#0b1220}
+    header{background:linear-gradient(90deg,#ffffff, #f0f4ff);padding:18px 16px;display:flex;gap:12px;align-items:center;position:sticky;top:0;z-index:40;border-bottom:1px solid #e6e9f2}
+    .brand{display:flex;align-items:center;gap:12px}
+    .logo{width:48px;height:48px;border-radius:10px;background:linear-gradient(135deg,#16a34a,#86efac);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:22px}
+    .search{flex:1;display:flex}
+    .search input{width:100%;padding:10px 12px;border-radius:10px;border:1px solid #dbe6ff;font-size:14px}
+    .actions{display:flex;gap:8px}
+    button{background:var(--accent);color:#fff;padding:8px 12px;border-radius:8px;border:0;cursor:pointer}
+    main{padding:18px;max-width:1100px;margin:0 auto}
+    .hero{display:flex;gap:18px;align-items:center;margin-bottom:18px}
+    .hero .text h1{margin:0;font-size:22px}
+    .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px}
+    .card{background:var(--card);padding:12px;border-radius:12px;box-shadow:0 6px 18px rgba(12,34,89,0.06);display:flex;flex-direction:column;gap:8px}
+    .thumb{height:120px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:40px}
+    .meta{display:flex;justify-content:space-between;align-items:center}
+    .price{font-weight:700}
+    .muted{color:var(--muted);font-size:13px}
+    .qty{display:flex;gap:6px;align-items:center}
+    .qty button{background:#eef2ff;color:var(--accent);padding:6px;border-radius:6px;border:0;font-weight:700}
+    .cart-btn{background:#111827}
+    /* cart drawer */
+    .cart-drawer{position:fixed;right:16px;bottom:16px;width:68px;height:68px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;color:#fff;box-shadow:0 8px 26px rgba(15,98,254,0.18);cursor:pointer}
+    .cart-panel{position:fixed;right:16px;top:90px;width:360px;max-height:70vh;background:var(--card);border-radius:12px;box-shadow:0 18px 60px rgba(2,6,23,0.18);overflow:auto;padding:12px;display:none}
+    .cart-panel.open{display:block}
+    .cart-item{display:flex;gap:10px;align-items:center;padding:8px;border-bottom:1px dashed #eef2ff}
+    .cart-item .thumb{height:56px;width:56px;font-size:28px}
+    .checkout{padding:12px;display:flex;flex-direction:column;gap:8px}
+    input[type="text"], input[type="tel"], input[type="email"], textarea{width:100%;padding:8px;border-radius:8px;border:1px solid #e6eef9}
+    footer{padding:18px;text-align:center;color:var(--muted)}
+    @media (max-width:600px){.cart-panel{right:8px;left:8px;width:auto;top:auto;bottom:90px}}
+  </style>
+</head>
+<body>
+  <header>
+    <div class="brand">
+      <div class="logo">গrocery</div>
+      <div>
+        <div style="font-weight:700">গ্রোসারি হোম ডেলিভারি</div>
+        <div class="muted" style="font-size:12px">আপনার গ্রামের মতো সহজ — ডোর টু ডোর</div>
+      </div>
+    </div>
+    <div class="search">
+      <input id="search" placeholder="পণ্যের নাম খুঁজুন — যেমন: আলু, ডিম, দুধ...">
+    </div>
+    <div class="actions">
+      <button id="openProducts">শপ করুন</button>
+      <button id="viewCart" class="cart-btn">কার্ট দেখুন</button>
+    </div>
+  </header>
+
+  <main>
+    <section class="hero">
+      <div class="text">
+        <h1>বেস্ট সেলিং প্রোডাক্ট</h1>
+        <div class="muted">শুধু ডেমো — Backend ছাড়া কাজ করে (LocalStorage ব্যবহার করে)</div>
+      </div>
+    </section>
+
+    <section>
+      <div class="grid" id="productGrid"></div>
+    </section>
+  </main>
+
+  <div class="cart-drawer" id="cartBubble">🛒<div id="cartCount" style="position:absolute;right:6px;top:6px;background:#ff4757;width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;color:#fff">0</div></div>
+  <aside class="cart-panel" id="cartPanel">
+    <h3>আপনার কার্ট</h3>
+    <div id="cartList"></div>
+    <div class="checkout">
+      <div style="display:flex;justify-content:space-between;align-items:center"><strong>মোট</strong><strong id="cartTotal">₹0</strong></div>
+      <button id="checkoutBtn">চেকআউট</button>
+      <div id="checkoutForm" style="display:none">
+        <h4>ডেলিভারি তথ্য</h4>
+        <input id="cusName" placeholder="নাম">
+        <input id="cusPhone" placeholder="মোবাইল নম্বর" type="tel">
+        <textarea id="cusAddr" rows="3" placeholder="ঠিকানা"></textarea>
+        <button id="placeOrder">অর্ডার দিন</button>
+      </div>
+    </div>
+  </aside>
+
+  <footer>ডেমো — আপনার প্রয়োজন অনুযায়ী কাস্টমাইজ করুন</footer>
+
+  <script>
+    // Sample products (you can replace or load from API)
+    const sampleProducts = [
+      { id: 'p1', name: 'আলু (1 Kg)', price: 30, desc: 'তাজা স্থানীয় আলু', emoji: '🥔' },
+      { id: 'p2', name: 'ডিম (6 pcs)', price: 60, desc: 'ফার্ম ফ্রেশ', emoji: '🥚' },
+      { id: 'p3', name: 'দুধ (1 L)', price: 50, desc: 'ফুল ক্রিম', emoji: '🥛' },
+      { id: 'p4', name: 'চাল (5 Kg)', price: 400, desc: 'উন্নত মানের', emoji: '🌾' },
+      { id: 'p5', name: 'পিয়াজ (1 Kg)', price: 35, desc: 'সুস্বাদু পিয়াজ', emoji: '🧅' },
+      { id: 'p6', name: 'চিনি (1 Kg)', price: 45, desc: 'মিষ্টতা ঠিকঠাক', emoji: '🍚' }
+    ];
+
+    // State
+    let products = sampleProducts.slice();
+    let cart = JSON.parse(localStorage.getItem('gd_cart')||'{}');
+
+    // Elements
+    const productGrid = document.getElementById('productGrid');
+    const searchInput = document.getElementById('search');
+    const cartPanel = document.getElementById('cartPanel');
+    const cartList = document.getElementById('cartList');
+    const cartBubble = document.getElementById('cartBubble');
+    const cartCountEl = document.getElementById('cartCount');
+    const cartTotalEl = document.getElementById('cartTotal');
+    const checkoutBtn = document.getElementById('checkoutBtn');
+    const checkoutForm = document.getElementById('checkoutForm');
+    const placeOrderBtn = document.getElementById('placeOrder');
+
+    function renderProducts(items){
+      productGrid.innerHTML = '';
+      items.forEach(p=>{
+        const card = document.createElement('div'); card.className='card';
+        card.innerHTML = `
+          <div class="thumb">${p.emoji}</div>
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <div>
+              <div style="font-weight:700">${p.name}</div>
+              <div class="muted">${p.desc}</div>
+            </div>
+            <div style="text-align:right">
+              <div class="price">₹${p.price}</div>
+              <div class="muted">/approx</div>
+            </div>
+          </div>
+          <div style="display:flex;gap:8px;margin-top:8px;align-items:center">
+            <button onclick="addToCart('${p.id}')">Add</button>
+            <button class="cart-btn" onclick="openCart()">Buy</button>
+          </div>
+        `;
+        productGrid.appendChild(card);
+      });
+    }
+
+    function addToCart(id){
+      cart[id] = (cart[id]||0)+1;
+      saveCart();
+      renderCart();
+      // small animation
+      cartBubble.animate([{transform: 'scale(1)'},{transform:'scale(1.08)'},{transform:'scale(1)'}],{duration:220});
+    }
+
+    function saveCart(){
+      localStorage.setItem('gd_cart', JSON.stringify(cart));
+    }
+
+    function renderCart(){
+      cartList.innerHTML='';
+      let total=0; let count=0;
+      for(const id in cart){
+        const qty = cart[id];
+        const p = products.find(x=>x.id===id);
+        if(!p) continue;
+        count += qty;
+        const line = document.createElement('div'); line.className='cart-item';
+        line.innerHTML = `
+          <div class="thumb">${p.emoji}</div>
+          <div style="flex:1">
+            <div style="font-weight:700">${p.name}</div>
+            <div class="muted">₹${p.price} x ${qty} = ₹${p.price*qty}</div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:6px;align-items:flex-end">
+            <div style="display:flex;gap:6px;align-items:center">
+              <button onclick="changeQty('${id}', -1)">-</button>
+              <div>${qty}</div>
+              <button onclick="changeQty('${id}', 1)">+</button>
+            </div>
+            <button style="background:transparent;color:#ef4444;border:0;cursor:pointer" onclick="removeItem('${id}')">Remove</button>
+          </div>
+        `;
+        cartList.appendChild(line);
+        total += p.price * qty;
+      }
+      cartCountEl.textContent = count;
+      cartTotalEl.textContent = '₹' + total;
+      if(count===0){
+        cartList.innerHTML = '<div class="muted">আপনার কার্ট খালি। পণ্য যুক্ত করুন।</div>';
+      }
+    }
+
+    function changeQty(id, delta){
+      cart[id] = (cart[id]||0)+delta;
+      if(cart[id] <= 0) delete cart[id];
+      saveCart(); renderCart();
+    }
+    function removeItem(id){ delete cart[id]; saveCart(); renderCart(); }
+
+    function openCart(){ cartPanel.classList.toggle('open'); }
+
+    // Search
+    searchInput.addEventListener('input', ()=>{
+      const q = searchInput.value.trim().toLowerCase();
+      if(!q) renderProducts(products);
+      else renderProducts(products.filter(p=>p.name.toLowerCase().includes(q) || p.desc.toLowerCase().includes(q)));
+    });
+
+    // Buttons
+    document.getElementById('viewCart').addEventListener('click', openCart);
+    cartBubble.addEventListener('click', openCart);
+    document.getElementById('openProducts').addEventListener('click', ()=>{ window.scrollTo({top:document.querySelector('main').offsetTop, behavior:'smooth'}); });
+
+    checkoutBtn.addEventListener('click', ()=>{
+      checkoutForm.style.display = checkoutForm.style.display === 'none' ? 'block' : 'none';
+    });
+
+    placeOrderBtn.addEventListener('click', ()=>{
+      const name = document.getElementById('cusName').value.trim();
+      const phone = document.getElementById('cusPhone').value.trim();
+      const addr = document.getElementById('cusAddr').value.trim();
+      if(!name||!phone||!addr){ alert('সম্পূর্ণ ডেলিভারি তথ্য দিন'); return; }
+      const order = {id: 'ORD'+Date.now(), name, phone, addr, cart, total: cartTotalEl.textContent};
+      // In real app: send to server. Here we save to localStorage as demo queue
+      const orders = JSON.parse(localStorage.getItem('gd_orders')||'[]');
+      orders.push(order); localStorage.setItem('gd_orders', JSON.stringify(orders));
+      alert('ধন্যবাদ! অর্ডার গ্রহণ করা হয়েছে. Order ID: '+order.id);
+      // clear cart
+      cart = {}; saveCart(); renderCart(); checkoutForm.style.display='none';
+      document.getElementById('cusName').value=''; document.getElementById('cusPhone').value=''; document.getElementById('cusAddr').value='';
+    });
+
+    // Init
+    renderProducts(products);
+    renderCart();
+
+    // For developers: expose simple API to add products (browser console)
+    window.__GD = { products, addToCart, renderProducts };
+  </script>
+</body>
+</html>
